@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Atelier Soultracks</title>
+<meta name="description" content="Carnet d'entretien, stock de pièces et QR codes de la flotte Soultracks Expédition.">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1F1D1B" media="(prefers-color-scheme: dark)">
+<meta name="robots" content="noindex,nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Atelier ST">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/favicon-64.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preload" href="fonts/barlow-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/barlow-condensed-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="meca">
+
+<header class="top">
+  <div class="wrap">
+    <div class="brandrow">
+      <img class="logo" src="icons/logo-96.png" alt="" width="40" height="40">
+      <div class="brand">
+        <span class="eyebrow">Soultracks Expédition<span class="hide-s"> · Atelier d'Orthez</span></span>
+        <h1>Carnet d'entretien</h1>
+      </div>
+      <button class="conn" id="conn" type="button" title="Toucher pour envoyer maintenant"><span class="dot" id="connDot"></span><span id="connTxt">Ouverture…</span></button>
+      <button class="btn scan" id="scanBtn" type="button" title="Flasher le QR code d'une moto ou d'une pièce">Flasher un QR</button>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Sections" id="tabs">
+      <button class="tab" role="tab" data-view="flotte" aria-selected="true">Flotte</button>
+      <button class="tab" role="tab" data-view="intervention" aria-selected="false">Intervention</button>
+      <button class="tab" role="tab" data-view="stock" aria-selected="false">Stock</button>
+      <button class="tab" role="tab" data-view="locations" aria-selected="false">Locations</button>
+      <button class="tab admin-only" role="tab" data-view="trajets" aria-selected="false">Frais km</button>
+      <button class="tab admin-only" role="tab" data-view="export" aria-selected="false">Export compta</button>
+      <button class="tab" role="tab" data-view="reference" aria-selected="false">Référence Kove</button>
+      <button class="tab admin-only" role="tab" data-view="tableau" aria-selected="false" id="tabTableau" hidden>Tableau de bord</button>
+      <button class="tab" role="tab" data-view="reglages" aria-selected="false">Réglages</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="update" hidden></div>
+  <div id="banner"></div>
+
+  <!-- ACCUEIL (première ouverture, sans clé) -->
+  <section class="view" id="v-accueil" hidden>
+    <div class="form hero">
+      <img src="icons/icon-192.png" alt="" width="96" height="96" class="heroimg">
+      <h2>Bienvenue à l'atelier</h2>
+      <p class="muted">Pour ouvrir le carnet sur ce téléphone, flashe le QR code d'accès que te montre le guide sur son téléphone. Une seule fois : ensuite l'appli reste ouverte, même sans réseau.</p>
+      <button class="btn scan big" type="button" id="accScan">Flasher mon QR d'accès</button>
+      <details class="box">
+        <summary>Je n'ai pas de QR, j'ai un code</summary>
+        <form class="row" id="accForm" style="margin-top:10px" autocomplete="off">
+          <input type="text" id="accKey" inputmode="latin" autocapitalize="off" spellcheck="false" placeholder="Code d'accès (32 caractères)" style="flex:1;min-width:200px" aria-label="Code d'accès">
+          <button class="btn primary" type="submit">Ouvrir</button>
+        </form>
+      </details>
+      <div id="accMsg" class="small" aria-live="polite"></div>
+    </div>
+    <div id="installHelp"></div>
+  </section>
+
+  <!-- FLOTTE -->
+  <section class="view" id="v-flotte">
+    <div class="head">
+      <div><h2>La flotte</h2><p>Chaque véhicule, son kilométrage et ses prochains entretiens. Touche une fiche pour l'ouvrir, ou flashe le QR collé sur le cadre.</p></div>
+      <label class="row mode small guide-only" id="modeBox"><input type="checkbox" id="modeAtelier"> Voir comme un mécanicien</label>
+    </div>
+    <div class="strip" id="fleetStats"></div>
+    <div class="grid" id="fleetGrid"></div>
+  </section>
+
+  <!-- FICHE -->
+  <section class="view" id="v-fiche" hidden>
+    <button class="btn ghost small back" type="button" data-go="flotte">← Retour à la flotte</button>
+    <div id="ficheBody"></div>
+  </section>
+
+  <!-- INTERVENTION -->
+  <section class="view" id="v-intervention" hidden>
+    <div class="head">
+      <div><h2>Nouvelle intervention</h2><p>Flashe la moto, puis chaque pièce que tu montes : la pièce sort du stock et s'inscrit sur la bonne moto. Saisis le kilométrage, coche ce qui a été fait, enregistre. Ça marche aussi sans réseau.</p></div>
+    </div>
+    <form class="form" id="ivForm" autocomplete="off">
+      <div class="fgrid">
+        <label class="f"><span>Véhicule</span><select id="ivVeh" required></select></label>
+        <label class="f"><span>Date</span><input type="date" id="ivDate" required></label>
+        <label class="f"><span>Kilométrage au compteur</span><input type="number" id="ivKm" inputmode="numeric" min="0" step="1" placeholder="ex. 8450"></label>
+      </div>
+      <div class="row"><button class="btn scan small" type="button" id="ivScanVeh">Flasher la moto</button><span class="small muted" id="ivVehInfo"></span></div>
+      <div class="f"><span class="small muted" style="font-weight:600">Ce qui a été fait</span><div class="chips" id="ivOps"></div></div>
+      <div class="f">
+        <span class="small muted" style="font-weight:600">Pièces montées (sortent du stock)</span>
+        <div class="lines" id="ivParts"></div>
+        <div class="row">
+          <button class="btn scan small" type="button" id="ivScanPart">Flasher une pièce</button>
+          <select id="ivAddPart" style="flex:1;min-width:200px" aria-label="Choisir une pièce dans le stock"><option value="">Ou choisir dans le stock…</option></select>
+        </div>
+      </div>
+      <div class="fgrid">
+        <label class="f admin-only"><span>Fait par</span><select id="ivBy"><option>Guide</option><option>Mécanicien</option><option>Assistance</option><option>Concession</option></select></label>
+        <label class="f"><span>Prénom de l'intervenant (facultatif)</span><input type="text" id="ivWho" maxlength="40" placeholder="ex. Karim"></label>
+        <label class="f admin-only"><span>Imputation du coût</span><select id="ivImp"><option value="">Selon le véhicule</option><option value="societe">Charge société</option><option value="proprietaire">Charge du propriétaire</option><option value="refacturable">Refacturable</option></select></label>
+        <label class="f admin-only"><span>Main d'œuvre ou frais (€ HT)</span><input type="number" id="ivMO" inputmode="decimal" min="0" step="0.01" placeholder="0"></label>
+      </div>
+      <label class="f"><span>Remarque</span><textarea id="ivNote" maxlength="600" placeholder="ex. jeu de chaîne repris, plaquettes AR à 3,5 mm"></textarea></label>
+      <div id="ivWarn"></div>
+      <div class="row">
+        <button class="btn primary" type="submit" id="ivSave">Enregistrer l'intervention</button>
+        <button class="btn ghost" type="button" id="ivReset">Effacer le brouillon</button>
+        <span class="small muted admin-only" id="ivTotal"></span>
+      </div>
+    </form>
+  </section>
+
+  <!-- STOCK -->
+  <section class="view" id="v-stock" hidden>
+    <div class="head">
+      <div><h2>Stock de pièces</h2><p>Chaque référence a son QR code. Les entrées proposées viennent des commandes et factures récentes : confirme-les à la réception.</p></div>
+      <div class="row admin-only"><button class="btn primary" type="button" id="newPartBtn">Nouvelle pièce</button></div>
+    </div>
+    <div class="strip" id="stockStats"></div>
+    <div id="partFormBox" hidden></div>
+    <div class="row"><input type="search" id="stockSearch" placeholder="Chercher une pièce, une référence, un fournisseur…" style="flex:1;min-width:220px" aria-label="Chercher une pièce"><select id="stockFilter" style="width:auto" aria-label="Filtre"><option value="">Tout le stock</option><option value="low">Sous le seuil</option><option value="todo">Entrées à confirmer</option></select></div>
+    <div id="stockList"></div>
+    <details class="box admin-only" id="labelsBox">
+      <summary>Étiquettes QR pour l'imprimante d'étiquettes</summary>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
+        <p class="small muted" style="margin:0">Coche les pièces dans la liste (case à gauche), puis télécharge. Chaque étiquette porte le QR et le code ST. Le QR ne contient que le code interne (« STX:ST-0001 ») : un téléphone ordinaire n'ouvre rien, seule cette appli le lit. Le CSV sert à la fusion de base de données de P-touch Editor (objet QR lié à la colonne QR).</p>
+        <div class="row"><span class="small">Rouleau : <b>DK-22211</b>, film blanc continu 29 mm, Brother QL-1110NWBc</span><span class="small muted" id="tapeHint"></span></div>
+        <div class="labels" id="labelPreview"></div>
+        <div class="row"><button class="btn small" type="button" id="dlLabelsPng">Télécharger la planche (PNG)</button><button class="btn small" type="button" id="dlLabelsCsv">Télécharger pour P-touch (CSV)</button><button class="btn small ghost" type="button" id="selAllParts">Tout cocher</button></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- LOCATIONS -->
+  <section class="view" id="v-locations" hidden>
+    <div class="head">
+      <div><h2>Locations</h2><p>Qui a roulé sur quelle moto, sur quel raid. Pilote en prénom et initiale seulement, jamais de coordonnées.</p></div>
+      <button class="btn primary admin-only" type="button" id="newLocBtn">Nouvelle location</button>
+    </div>
+    <div id="locFormBox" hidden></div>
+    <div id="locList"></div>
+  </section>
+
+  <!-- TRAJETS -->
+  <section class="view" id="v-trajets" hidden>
+    <div class="head">
+      <div><h2>Frais kilométriques du fourgon</h2><p>Journal des trajets professionnels faits avec le fourgon personnel du guide, mis à disposition. Les indemnités suivent le barème kilométrique fiscal, calculées sur le cumul de l'année.</p></div>
+      <button class="btn primary" type="button" id="newTripBtn">Nouveau trajet</button>
+    </div>
+    <div id="tripCv"></div>
+    <div id="tripFormBox" hidden></div>
+    <div class="form"><div class="fgrid"><label class="f"><span>Mois</span><input type="month" id="tripMonth"></label></div></div>
+    <div class="strip" id="tripStats"></div>
+    <div id="tripList"></div>
+    <div class="row"><button class="btn primary" type="button" id="dlTrips">Export du mois pour la paie (CSV)</button></div>
+    <p class="small muted">Barème kilométrique fiscal des automobiles (impots.gouv.fr) : taux des revenus 2022, gelés depuis ; à reprendre quand le barème des revenus 2026 paraîtra. Distance d : jusqu'à 5 000 km, d × taux ; de 5 001 à 20 000 km, d × taux + forfait ; au-delà, d × taux. L'indemnité du mois est la différence entre le montant dû sur le cumul de fin de mois et celui de fin du mois précédent.</p>
+    <div class="note warn small">Valable si la carte grise est au nom du guide ou de son conjoint, et si la société ne paie ni carburant, ni entretien, ni assurance du fourgon (à confirmer par l'expert-comptable).</div>
+  </section>
+
+  <!-- EXPORT -->
+  <section class="view" id="v-export" hidden>
+    <div class="head">
+      <div><h2>Export pour la comptabilité</h2><p>Pièces consommées moto par moto sur une période, valeur du stock, journal des interventions. Fichiers CSV au format Excel français (point-virgule).</p></div>
+    </div>
+    <div class="form">
+      <div class="fgrid">
+        <label class="f"><span>Du</span><input type="date" id="exFrom"></label>
+        <label class="f"><span>Au</span><input type="date" id="exTo"></label>
+        <label class="f"><span>Véhicule</span><select id="exVeh"><option value="">Tous les véhicules</option></select></label>
+      </div>
+    </div>
+    <div id="exTable"></div>
+    <div class="row">
+      <button class="btn primary" type="button" id="dlConso">Pièces par véhicule (CSV)</button>
+      <button class="btn" type="button" id="dlStock">Valeur du stock (CSV)</button>
+      <button class="btn" type="button" id="dlInter">Journal des interventions (CSV)</button>
+    </div>
+    <h3>Rapport annuel pour l'expert-comptable</h3>
+    <div class="form"><div class="fgrid"><label class="f"><span>Année</span><input type="number" id="anYear" min="2026" max="2100" step="1"></label></div></div>
+    <div id="anTable"></div>
+    <div class="row"><button class="btn primary" type="button" id="dlAnnual">Rapport annuel (CSV)</button></div>
+    <h3>Sauvegarde de la base</h3>
+    <div class="form">
+      <p class="small muted" style="margin:0">La base vit dans le Google Sheets SOULTRACKS_BASE_FLOTTE_STOCK (Drive soultracks.admin) : elle est déjà dans le Drive. La sauvegarde JSON contient tous les véhicules, pièces, mouvements, interventions, locations et trajets, en un seul fichier.</p>
+      <div class="row"><button class="btn" type="button" id="bkDl">Télécharger la sauvegarde (JSON)</button><button class="btn ghost" type="button" id="bkRestoreBtn">Restaurer depuis un fichier…</button></div>
+      <div id="bkStatus" class="small muted"></div>
+      <input type="file" id="bkFile" accept="application/json,.json" hidden>
+      <div id="bkRestore"></div>
+    </div>
+    <div id="csvFallback"></div>
+  </section>
+
+  <!-- REFERENCE -->
+  <section class="view" id="v-reference" hidden>
+    <div class="head">
+      <div><h2>Référence Kove 450 Rally</h2><p>Intervalles du manuel Soultracks (moteur Z194YMQ) et couples de serrage de la table atelier. En usage intensif (désert, piste, hautes vitesses répétées), réduire les intervalles de 50 %.</p></div>
+    </div>
+    <div class="tablebox"><table id="refIntervals"></table></div>
+    <h3>Mémo atelier</h3>
+    <div class="tablebox"><table id="refMemo"></table></div>
+    <div class="note warn small">Axe de roue avant : 88 N·m au manuel constructeur, 70 N·m dans la table atelier. Écrou d'axe arrière : 128 N·m au manuel, 100 N·m dans la table atelier. Vérifier la valeur avant serrage.</div>
+    <h3>Couples de serrage (N·m)</h3>
+    <div class="tablebox"><table id="refTorque"></table></div>
+    <p class="small muted">Légende : Loctite = frein-filet ; Lubrifier = graisser ; Marquer = repère peinture après serrage.</p>
+  </section>
+
+  <!-- TABLEAU DE BORD (guide, prévu) -->
+  <section class="view admin-only" id="v-tableau" hidden></section>
+
+  <!-- REGLAGES -->
+  <section class="view" id="v-reglages" hidden>
+    <div class="head"><div><h2>Réglages</h2><p>État de l'envoi vers le Drive, accès des mécaniciens, installation sur le téléphone.</p></div></div>
+    <div class="form" id="syncBox"></div>
+    <div class="form admin-only" id="accessBox"></div>
+    <div class="form" id="meBox"></div>
+  </section>
+</main>
+
+<!-- SCANNER -->
+<div class="scanner" id="scanner" hidden role="dialog" aria-modal="true" aria-label="Lecture d'un QR code">
+  <div class="scanbox">
+    <video id="scanVideo" playsinline muted></video>
+    <div class="aim" aria-hidden="true"></div>
+  </div>
+  <p class="scanhint" id="scanHint">Vise le QR code, il se lit tout seul.</p>
+  <div class="row" style="justify-content:center">
+    <button class="btn" type="button" id="scanPhoto">Prendre une photo à la place</button>
+    <button class="btn primary" type="button" id="scanClose">Fermer</button>
+  </div>
+</div>
+<input type="file" id="scanFile" accept="image/*" capture="environment" hidden>
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script src="config.js"></script>
+<script src="vendor/qrcode-generator-1.4.4.js"></script>
+<script src="vendor/jsQR-1.4.0.js"></script>
+<script src="core.js"></script>
+<script src="modules/carnet.js"></script>
+<script src="modules/tableau.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

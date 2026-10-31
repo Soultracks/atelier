@@ -1,8 +1,8 @@
 /* Atelier Soultracks · coquille de l'appli : profils, navigation, voyant d'envoi, file hors ligne,
    lecteur de QR par la caméra, réglages et accès des mécaniciens, mises à jour de l'appli. */
 "use strict";
-const APP_VERSION="1.0.0";
-const S={D:null,veh:{},parts:{},inter:[],moves:[],locs:[],trajets:[],ready:false,view:"flotte",fiche:null,sel:new Set(),
+const APP_VERSION="1.2.0";
+const S={D:null,veh:{},parts:{},inter:[],moves:[],locs:[],trajets:[],fours:{},params:{},ready:false,view:"flotte",fiche:null,sel:new Set(),
   role:null,nom:"",pending:0,lastOk:0,lastErr:null,authErr:false,syncing:false,refused:[],pendingOps:[]};
 const $=s=>document.querySelector(s);
 const $$=s=>Array.from(document.querySelectorAll(s));
@@ -111,6 +111,11 @@ const App={
   async setKey(k,fromLink){
     const msg=t=>{const m=$("#accMsg");if(m)m.innerHTML=t};
     if(!/^[A-Za-z0-9]{24,64}$/.test(k)){msg(`<span style="color:var(--bad)">Ce code n'est pas un code d'accès de l'atelier.</span>`);return}
+    // Nouvelle clé sur ce téléphone : la copie locale de l'accès précédent (avec ses prix, s'il s'agissait du guide) est effacée
+    // avant tout, pour qu'aucune donnée ne passe d'un profil à l'autre. Des saisies encore à envoyer bloquent le changement.
+    const prev=await AtelierCore.kv.get("key");
+    if(prev&&prev!==k){const n=await AtelierCore.queue.count();if(n){msg(`<span style="color:var(--bad)">${n} saisie(s) de l'accès précédent ne sont pas encore envoyées : envoie-les d'abord (Réglages) ou retire l'accès.</span>`);toast("Changement d'accès refusé : saisies en attente.");return}}
+    if(prev!==k){await AtelierCore.kv.del("data");await AtelierCore.kv.del("meta");await AtelierCore.kv.del("refus");S.role=null;S.nom="";S.lastOk=0;S.ready=false;for(const m of MODS)if(m.load)m.load({},[])}
     await AtelierCore.kv.set("key",k);App.key=k;
     if(!App.gw){msg("Code gardé. La passerelle n'est pas encore installée : rien ne peut être chargé.");go("flotte");return}
     if(!App.online()){msg("Code gardé. Il faut du réseau une première fois pour charger la base de l'atelier.");go("flotte");return}
@@ -171,7 +176,7 @@ function renderAccueil(){$("#installHelp").innerHTML=`<div class="form"><h3>Inst
 function bindInstall(){const b=$("#doInstall");if(b)b.onclick=async()=>{if(!App.install)return;App.install.prompt();try{await App.install.userChoice}catch(e){}App.install=null;renderAll()}}
 
 /* ---------- réglages ---------- */
-const COLL_LBL={vehicules:"Fiche véhicule",pieces:"Fiche pièce",mouvements:"Mouvement de stock",interventions:"Intervention",locations:"Location",trajets:"Trajet"};
+const COLL_LBL={vehicules:"Fiche véhicule",pieces:"Fiche pièce",mouvements:"Mouvement de stock",interventions:"Intervention",locations:"Location",trajets:"Trajet",fournisseurs:"Fournisseur",parametres:"Réglage du stock"};
 function opLabel(o){const d=o.doc||{};if(o.kind==="move")return `${d.delta>0?"Entrée":"Sortie"} de stock · ${esc(d.designation||d.pieceId)} (${d.delta>0?"+":""}${esc(d.delta)})`;
   const v=S.veh[d.vehiculeId||o.id];return `${COLL_LBL[o.coll]||o.coll} · ${esc(o.coll==="vehicules"?(v&&v.nom||o.id):(v?(v.nom||v.id):(d.designation||d.raid||d.objet||o.id)))}${d.date?" · "+fdate(d.date):""}`}
 function renderReglages(){
@@ -189,7 +194,7 @@ function renderReglages(){
   const cr=$("#clearRefus");if(cr)cr.onclick=async()=>{await AtelierCore.kv.set("refus",[]);S.refused=[];renderReglages()};
   if(S.role==="guide")renderAccess();else $("#accessBox").innerHTML="";
   $("#meBox").innerHTML=`<h3>Ce téléphone</h3>
-    <div class="kv"><span class="k">Profil</span><span>${S.role==="guide"?"Guide (tout voir)":S.role==="mecanicien"?"Mécanicien (flash, pièces, km ; pas de prix)":"pas encore vérifié"}</span>
+    <div class="kv"><span class="k">Profil</span><span>${S.role==="guide"?"Guide (tout voir)":S.role==="mecanicien"?"Mécanicien (flash, pièces, km ; ni prix, ni fournisseurs)":"pas encore vérifié"}</span>
     ${S.nom?`<span class="k">Nom</span><span>${esc(S.nom)}</span>`:""}
     <span class="k">Version de l'appli</span><span>${APP_VERSION}</span>
     <span class="k">Passerelle</span><span>${App.gw?"installée":"pas encore installée (démonstration)"}</span></div>
@@ -260,7 +265,8 @@ async function boot(){
   await reloadLocal();
   if(!App.key){go("accueil");updateConn();return}
   const want=(location.hash||"").slice(1);
-  go(["intervention","stock","locations","reference","reglages"].includes(want)?want:"flotte");
+  const grandEcran=S.role==="guide"&&CFG.modules&&CFG.modules.tableau===true&&window.innerWidth>=900;
+  go(["intervention","stock","locations","reference","reglages","tableau","trajets","export"].includes(want)?want:(grandEcran?"tableau":"flotte"));
   if(new URLSearchParams(location.search).get("action")==="scan")Scan.open();
   if(App.online())doSync(false);
 }

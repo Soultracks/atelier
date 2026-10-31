@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Atelier Soultracks</title>
-<meta name="description" content="Carnet d'entretien, stock de pièces et QR codes de la flotte Soultracks Expédition.">
+<meta name="description" content="Carnet d'entretien, stock de pièces (prix et fournisseurs réservés au guide) et QR codes de la flotte Soultracks Expédition.">
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1F1D1B" media="(prefers-color-scheme: dark)">
 <meta name="robots" content="noindex,nofollow">
@@ -18,6 +18,7 @@
 <link rel="preload" href="fonts/barlow-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/barlow-condensed-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="tableau.css">
 </head>
 <body class="meca">
 
@@ -125,17 +126,18 @@
   <!-- STOCK -->
   <section class="view" id="v-stock" hidden>
     <div class="head">
-      <div><h2>Stock de pièces</h2><p>Chaque référence a son QR code. Les entrées proposées viennent des commandes et factures récentes : confirme-les à la réception.</p></div>
+      <div><h2>Stock de pièces</h2><p class="guide-only">Chaque pièce a son code ST et son QR. Entrée à la réception (prix d'achat obligatoire), sortie par flash sur la moto, inventaire, alerte de seuil et proposition de commande. Prix d'achat, prix public, marges et fournisseurs ne sont visibles que par le guide.</p><p class="meca-only">Flashe la pièce que tu montes : elle sort du stock et s'inscrit sur la moto. Tu vois le code, la désignation, la quantité et l'emplacement.</p></div>
       <div class="row admin-only"><button class="btn primary" type="button" id="newPartBtn">Nouvelle pièce</button></div>
     </div>
     <div class="strip" id="stockStats"></div>
     <div id="partFormBox" hidden></div>
-    <div class="row"><input type="search" id="stockSearch" placeholder="Chercher une pièce, une référence, un fournisseur…" style="flex:1;min-width:220px" aria-label="Chercher une pièce"><select id="stockFilter" style="width:auto" aria-label="Filtre"><option value="">Tout le stock</option><option value="low">Sous le seuil</option><option value="todo">Entrées à confirmer</option></select></div>
+    <div class="row"><input type="search" id="stockSearch" placeholder="Chercher une pièce, un code, une référence…" style="flex:1;min-width:220px" aria-label="Chercher une pièce"><select id="stockFilter" style="width:auto" aria-label="Vue du stock"><option value="">Tout le stock</option><option value="low">Sous le seuil</option><option value="todo">Entrées à confirmer</option></select></div>
     <div id="stockList"></div>
+    <div id="stockBoxes"></div>
     <details class="box admin-only" id="labelsBox">
       <summary>Étiquettes QR pour l'imprimante d'étiquettes</summary>
       <div style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
-        <p class="small muted" style="margin:0">Coche les pièces dans la liste (case à gauche), puis télécharge. Chaque étiquette porte le QR et le code ST. Le QR ne contient que le code interne (« STX:ST-0001 ») : un téléphone ordinaire n'ouvre rien, seule cette appli le lit. Le CSV sert à la fusion de base de données de P-touch Editor (objet QR lié à la colonne QR).</p>
+        <p class="small muted" style="margin:0">Coche les pièces dans la liste (case à gauche), puis télécharge. Chaque étiquette porte le QR, le code ST et la désignation courte — jamais de prix. Le QR ne contient que le code interne (« STX:ST-0001 ») : un téléphone ordinaire n'ouvre rien, seule cette appli le lit. Le CSV sert à la fusion de base de données de P-touch Editor (objet QR lié à la colonne QR).</p>
         <div class="row"><span class="small">Rouleau : <b>DK-22211</b>, film blanc continu 29 mm, Brother QL-1110NWBc</span><span class="small muted" id="tapeHint"></span></div>
         <div class="labels" id="labelPreview"></div>
         <div class="row"><button class="btn small" type="button" id="dlLabelsPng">Télécharger la planche (PNG)</button><button class="btn small" type="button" id="dlLabelsCsv">Télécharger pour P-touch (CSV)</button><button class="btn small ghost" type="button" id="selAllParts">Tout cocher</button></div>
@@ -216,7 +218,7 @@
     <p class="small muted">Légende : Loctite = frein-filet ; Lubrifier = graisser ; Marquer = repère peinture après serrage.</p>
   </section>
 
-  <!-- TABLEAU DE BORD (guide, prévu) -->
+  <!-- TABLEAU DE BORD (guide) : rendu par modules/tableau.js -->
   <section class="view admin-only" id="v-tableau" hidden></section>
 
   <!-- REGLAGES -->

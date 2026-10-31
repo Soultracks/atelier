@@ -18,6 +18,7 @@
     {"src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
   ],
   "shortcuts": [
+    {"name": "Tableau de bord", "short_name": "Tableau", "url": "./#tableau", "icons": [{"src": "icons/icon-192.png", "sizes": "192x192"}]},
     {"name": "Flasher un QR", "short_name": "Flasher", "url": "./?action=scan", "icons": [{"src": "icons/icon-192.png", "sizes": "192x192"}]},
     {"name": "Nouvelle intervention", "short_name": "Intervention", "url": "./#intervention", "icons": [{"src": "icons/icon-192.png", "sizes": "192x192"}]}
   ]

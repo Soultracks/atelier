@@ -2,9 +2,9 @@
    - garde toute l'appli sur le téléphone (elle s'ouvre en mode avion) ;
    - ne touche jamais aux appels de la passerelle Google (toujours en direct) ;
    - Android : envoie la file des saisies dès que le réseau revient, même appli fermée (Background Sync). */
-var VERSION = "atelier-1.0.0";
+var VERSION = "atelier-1.2.0";
 var SHELL = [
-  "./", "index.html", "styles.css", "config.js", "core.js", "app.js",
+  "./", "index.html", "styles.css", "tableau.css", "config.js", "core.js", "app.js",
   "modules/carnet.js", "modules/tableau.js",
   "vendor/jsQR-1.4.0.js", "vendor/qrcode-generator-1.4.4.js",
   "manifest.webmanifest",
